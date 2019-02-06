@@ -1,0 +1,77 @@
+
+1. Install Java8
+
+add-apt-repository ppa:webupd8team/java
+apt-get update
+apt-get install oracle-java8-installer
+java -version
+
+update-alternatives --config java
+cat>>/etc/environment
+JAVA_HOME="/usr/lib/jvm/java-8-oracle"
+source /etc/environment
+echo $JAVA_HOME
+
+
+2. Create Mysql in RDS
+
+apt-get install mysql-server -y
+mysql –u root –p
+
+
+3. Install Sonarqube
+cd /opt
+wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-6.7.6.zip
+unzip sonarqube-6.0.zip
+mv /opt/sonarqube-6.0 /opt/sonar
+
+4. Connect to RDS instance with database credentials
+mysql -h <RDS_Instance_endpoint>:3306 -u <DB_USER_NAME> -p <DB_PASSWORD> 
+
+Create a new sonar database
+CREATE DATABASE sonar CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+Create a local and a remote user
+CREATE USER sonar@localhost IDENTIFIED BY 'sonar';
+CREATE USER sonar@'%' IDENTIFIED BY 'sonar';
+
+Grant database access permissions to users
+GRANT ALL ON sonar.* TO sonar@localhost;
+GRANT ALL ON sonar.* TO sonar@'%';
+
+check users and databases
+show databases;
+SELECT User FROM mysql.user;
+FLUSH PRIVILEGES;
+QUIT
+
+ON EC2 Instance
+Edit sonar properties file to uncomment and provide required information for below properties.
+
+File Name: /opt/sonar/conf/sonar.properties
+sonar.jdbc.username=sonar
+sonar.jdbc.password=sonar
+sonar.jdbc.url=jdbc:mysql://<RDS_DATABAE_ENDPOINT>:3306/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true&useConfigs=maxPerformance&useSSL=false
+sonar.web.host=0.0.0.0
+sonar.web.context=/sonar
+Start SonarQube service
+
+create a user sonar 
+
+adduser sonar
+passwd sonar
+usermod -aG sudo rajendra
+
+sudo groupadd sonar
+sudo useradd -c "Sonar System User" -d /opt/sonar -g sonar -s /bin/bash sonar
+sudo chown -R sonar:sonar /opt/sonar
+login as sonar
+
+cd /opt/sonar/bin/linux-x86-64/
+./sonar.sh start
+
+open security port
+9000
+3306
+
+http://ip:9000/sonar
